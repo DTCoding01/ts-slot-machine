@@ -11,17 +11,28 @@ class Fruit {
         return this.imagePath;
     }
 }
+const fruitTypes = [
+    new Fruit("Cherry", "../assets/cherry.png"),
+    new Fruit("Lemon", "../assets/lemon.png"),
+    new Fruit("Orange", "../assets/orange.png"),
+];
 class Reel {
     constructor() {
         this.fruits = [
-            new Fruit("Cherry", "../assets/cherry.png"),
-            new Fruit("Lemon", "../assets/lemon.png"),
-            new Fruit("Orange", "../assets/orange.png"),
+            this.getRandomFruit(),
+            this.getRandomFruit(),
+            this.getRandomFruit(),
         ];
     }
+    getRandomFruit() {
+        return fruitTypes[Math.floor(Math.random() * fruitTypes.length)];
+    }
     spin() {
-        const randomFruit = this.fruits[Math.floor(Math.random() * this.fruits.length)];
-        return randomFruit;
+        this.fruits.pop();
+        this.fruits.unshift(this.getRandomFruit());
+    }
+    getFruits() {
+        return this.fruits;
     }
 }
 class SlotMachine {
@@ -31,55 +42,70 @@ class SlotMachine {
             this.reels.push(new Reel());
         }
         this.spinDuration = 2000;
+        this.balance = 100;
+        this.payoutAmount = 50;
     }
-    spinReels() {
-        const spinResult = [];
-        for (let reel of this.reels) {
-            spinResult.push(reel.spin());
-        }
-        return spinResult;
-    }
-    displayResult(result) {
-        result.forEach((fruit, index) => {
+    displayReels() {
+        this.reels.forEach((reel, index) => {
             const reelElement = document.getElementById(`reel${index + 1}`);
             if (reelElement) {
                 reelElement.innerHTML = "";
-                const imageElement = document.createElement("img");
-                imageElement.src = fruit.getImagePath();
-                imageElement.alt = fruit.getName();
-                imageElement.style.width = "100px";
-                reelElement.appendChild(imageElement);
+                const reelImages = reel.getFruits().map((fruit) => {
+                    const imageElement = document.createElement("img");
+                    imageElement.src = fruit.getImagePath();
+                    imageElement.alt = fruit.getName();
+                    imageElement.style.width = "100px";
+                    return imageElement;
+                });
+                reelImages.forEach((img) => reelElement.appendChild(img));
             }
         });
     }
-    displayRandomFruits() {
-        let i = 0;
-        while (i < 3) {
-            const reelElement = document.getElementById(`reel${i + 1}`);
-            if (reelElement) {
-                const randomFruit = this.reels[i].spin();
-                reelElement.innerHTML = "";
-                const imageElement = document.createElement("img");
-                imageElement.src = randomFruit.getImagePath();
-                imageElement.alt = randomFruit.getName();
-                imageElement.style.width = "100px";
-                reelElement.appendChild(imageElement);
-                i++;
-            }
+    checkWin() {
+        const topRowWin = this.reels[0].getFruits()[0].getName() ===
+            this.reels[1].getFruits()[0].getName() &&
+            this.reels[0].getFruits()[0].getName() ===
+                this.reels[2].getFruits()[0].getName();
+        const middleRowWin = this.reels[0].getFruits()[1].getName() ===
+            this.reels[1].getFruits()[1].getName() &&
+            this.reels[0].getFruits()[1].getName() ===
+                this.reels[2].getFruits()[1].getName();
+        const bottomRowWin = this.reels[0].getFruits()[2].getName() ===
+            this.reels[1].getFruits()[2].getName() &&
+            this.reels[0].getFruits()[2].getName() ===
+                this.reels[2].getFruits()[2].getName();
+        return topRowWin || middleRowWin || bottomRowWin;
+    }
+    updateBalance(win) {
+        const messageElement = document.getElementById("message");
+        if (win) {
+            this.balance += this.payoutAmount;
+            if (messageElement)
+                messageElement.textContent = `You win! Balance $${this.balance}`;
+        }
+        else {
+            this.balance -= 10;
+            if (messageElement)
+                messageElement.textContent = `You lose! Balance $${this.balance}`;
         }
     }
-    play() {
-        const finalResult = this.spinReels();
+    animateReels() {
         let spins = 0;
-        const spinInterval = 100;
+        const spinInterval = 200;
         const spinAnimation = setInterval(() => {
-            this.displayRandomFruits();
+            this.reels.forEach((reel) => {
+                reel.spin();
+            });
+            this.displayReels();
             spins += spinInterval;
             if (spins >= this.spinDuration) {
                 clearInterval(spinAnimation);
-                this.displayResult(finalResult);
+                this.updateBalance(this.checkWin());
             }
         }, spinInterval);
+    }
+    play() {
+        this.animateReels();
     }
 }
 const game = new SlotMachine();

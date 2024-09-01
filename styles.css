@@ -24,15 +24,25 @@ body {
 
 .reel {
     width: 100px;
-    height: 100px;
+    height: 300px; 
     margin: 0 10px;
     background-color: #fff;
     border: 2px solid #000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2em;
-    color: #000;
+    overflow: hidden; 
+    position: relative; 
+}
+
+.reel img {
+    width: 100px;
+    height: 100px;
+    display: block; 
+}
+
+.reel-images {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: transform 0.5s ease-in-out; 
 }
 
 #spin-button {

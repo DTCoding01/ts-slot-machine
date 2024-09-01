@@ -1,6 +1,7 @@
 class Fruit {
   private name: string;
   private imagePath: string;
+
   constructor(name: string, imagePath: string) {
     this.name = name;
     this.imagePath = imagePath;
@@ -15,23 +16,42 @@ class Fruit {
   }
 }
 
-class Reel {
-  fruits: Fruit[] = [
-    new Fruit("Cherry", "../assets/cherry.png"),
-    new Fruit("Lemon", "../assets/lemon.png"),
-    new Fruit("Orange", "../assets/orange.png"),
-  ];
+const fruitTypes: Fruit[] = [
+  new Fruit("Cherry", "../assets/cherry.png"),
+  new Fruit("Lemon", "../assets/lemon.png"),
+  new Fruit("Orange", "../assets/orange.png"),
+];
 
-  spin(): Fruit {
-    const randomFruit: Fruit =
-      this.fruits[Math.floor(Math.random() * this.fruits.length)];
-    return randomFruit;
+class Reel {
+  fruits: Fruit[];
+
+  constructor() {
+    this.fruits = [
+      this.getRandomFruit(),
+      this.getRandomFruit(),
+      this.getRandomFruit(),
+    ];
+  }
+
+  getRandomFruit(): Fruit {
+    return fruitTypes[Math.floor(Math.random() * fruitTypes.length)];
+  }
+
+  spin(): void {
+    this.fruits.pop();
+    this.fruits.unshift(this.getRandomFruit());
+  }
+
+  getFruits(): Fruit[] {
+    return this.fruits;
   }
 }
 
 class SlotMachine {
   private reels: Reel[];
   private spinDuration: number;
+  private balance: number;
+  private payoutAmount: number;
 
   constructor() {
     this.reels = [];
@@ -39,66 +59,84 @@ class SlotMachine {
       this.reels.push(new Reel());
     }
     this.spinDuration = 2000;
+    this.balance = 100;
+    this.payoutAmount = 50;
   }
 
-  spinReels(): Fruit[] {
-    const spinResult: Fruit[] = [];
-    for (let reel of this.reels) {
-      spinResult.push(reel.spin());
-    }
-    return spinResult;
-  }
-
-  displayResult(result: Fruit[]): void {
-    result.forEach((fruit, index) => {
+  displayReels(): void {
+    this.reels.forEach((reel, index) => {
       const reelElement = document.getElementById(`reel${index + 1}`);
       if (reelElement) {
         reelElement.innerHTML = "";
 
-        const imageElement = document.createElement("img");
-        imageElement.src = fruit.getImagePath();
-        imageElement.alt = fruit.getName();
-        imageElement.style.width = "100px";
+        const reelImages = reel.getFruits().map((fruit) => {
+          const imageElement = document.createElement("img");
+          imageElement.src = fruit.getImagePath();
+          imageElement.alt = fruit.getName();
+          imageElement.style.width = "100px";
+          return imageElement;
+        });
 
-        reelElement.appendChild(imageElement);
+        reelImages.forEach((img) => reelElement.appendChild(img));
       }
     });
   }
 
-  displayRandomFruits(): void {
-    let i: number = 0;
-    while (i < 3) {
-      const reelElement = document.getElementById(`reel${i + 1}`);
-      if (reelElement) {
-        const randomFruit = this.reels[i].spin();
-        reelElement.innerHTML = "";
+  checkWin(): boolean {
+    const topRowWin =
+      this.reels[0].getFruits()[0].getName() ===
+        this.reels[1].getFruits()[0].getName() &&
+      this.reels[0].getFruits()[0].getName() ===
+        this.reels[2].getFruits()[0].getName();
 
-        const imageElement = document.createElement("img");
-        imageElement.src = randomFruit.getImagePath();
-        imageElement.alt = randomFruit.getName();
-        imageElement.style.width = "100px";
+    const middleRowWin =
+      this.reels[0].getFruits()[1].getName() ===
+        this.reels[1].getFruits()[1].getName() &&
+      this.reels[0].getFruits()[1].getName() ===
+        this.reels[2].getFruits()[1].getName();
 
-        reelElement.appendChild(imageElement);
-        i++;
-      }
+    const bottomRowWin =
+      this.reels[0].getFruits()[2].getName() ===
+        this.reels[1].getFruits()[2].getName() &&
+      this.reels[0].getFruits()[2].getName() ===
+        this.reels[2].getFruits()[2].getName();
+
+    return topRowWin || middleRowWin || bottomRowWin;
+  }
+
+  updateBalance(win: boolean): void {
+    const messageElement = document.getElementById("message");
+    if (win) {
+      this.balance += this.payoutAmount;
+      if (messageElement)
+        messageElement.textContent = `You win! Balance $${this.balance}`;
+    } else {
+      this.balance -= 10;
+      if (messageElement)
+        messageElement.textContent = `You lose! Balance $${this.balance}`;
     }
   }
 
-  play(): void {
-    const finalResult = this.spinReels();
-
+  animateReels(): void {
     let spins = 0;
     const spinInterval = 200;
 
     const spinAnimation = setInterval(() => {
-      this.displayRandomFruits();
-      spins += spinInterval;
+      this.reels.forEach((reel) => {
+        reel.spin();
+      });
+      this.displayReels();
 
+      spins += spinInterval;
       if (spins >= this.spinDuration) {
         clearInterval(spinAnimation);
-        this.displayResult(finalResult);
+        this.updateBalance(this.checkWin());
       }
     }, spinInterval);
+  }
+
+  play(): void {
+    this.animateReels();
   }
 }
 
