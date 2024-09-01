@@ -30,6 +30,7 @@ class SlotMachine {
         while (this.reels.length < 3) {
             this.reels.push(new Reel());
         }
+        this.spinDuration = 2000;
     }
     spinReels() {
         const spinResult = [];
@@ -51,8 +52,34 @@ class SlotMachine {
             }
         });
     }
+    displayRandomFruits() {
+        let i = 0;
+        while (i < 3) {
+            const reelElement = document.getElementById(`reel${i + 1}`);
+            if (reelElement) {
+                const randomFruit = this.reels[i].spin();
+                reelElement.innerHTML = "";
+                const imageElement = document.createElement("img");
+                imageElement.src = randomFruit.getImagePath();
+                imageElement.alt = randomFruit.getName();
+                imageElement.style.width = "100px";
+                reelElement.appendChild(imageElement);
+                i++;
+            }
+        }
+    }
     play() {
-        this.displayResult(this.spinReels());
+        const finalResult = this.spinReels();
+        let spins = 0;
+        const spinInterval = 100;
+        const spinAnimation = setInterval(() => {
+            this.displayRandomFruits();
+            spins += spinInterval;
+            if (spins >= this.spinDuration) {
+                clearInterval(spinAnimation);
+                this.displayResult(finalResult);
+            }
+        }, spinInterval);
     }
 }
 const game = new SlotMachine();
